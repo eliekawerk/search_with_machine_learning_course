@@ -11,6 +11,6 @@ git add .
 git commit -m "$1"
 
 echo "Pushing changes"
-git push
+git push elie_repo
 
 
