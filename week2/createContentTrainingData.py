@@ -1,15 +1,33 @@
 import argparse
-import multiprocessing
+from functools import reduce
 import glob
+import multiprocessing
 from tqdm import tqdm
 import os
 import random
 import xml.etree.ElementTree as ET
 from pathlib import Path
+import pandas as pd
+import nltk
+
+nltk.download('punkt')
+nltk.download('stopwords')
+stopwords = nltk.corpus.stopwords.words('english')
+stemmer = nltk.stem.porter.PorterStemmer()
 
 def transform_name(product_name):
     # IMPLEMENT
-    return product_name
+    products = [
+        word.lower().replace("-", "")
+        for word in nltk.tokenize.word_tokenize(product_name)
+        if word not in stopwords 
+    ]
+    return " ".join(
+        [
+            stemmer.stem(product) 
+            for product in products
+        ]
+    )
 
 # Directory for product data
 directory = r'/workspace/datasets/product_data/products/'
@@ -65,18 +83,37 @@ def _label_filename(filename):
                   cat = child.find('categoryPath')[len(child.find('categoryPath')) - 1][0].text
               # Replace newline chars with spaces so fastText doesn't complain
               name = child.find('name').text.replace('\n', ' ')
-              labels.append((cat, transform_name(name)))
+              labels.append({
+                "category": cat, 
+                "name": transform_name(name)
+               })
     return labels
 
 if __name__ == '__main__':
     files = glob.glob(f'{directory}/*.xml')
-
     print("Writing results to %s" % output_file)
+
     with multiprocessing.Pool() as p:
         all_labels = tqdm(p.imap_unordered(_label_filename, files), total=len(files))
 
+        results = []
+        for result in all_labels:
+            if result:
+                results.extend(result)
+
+        df_results = pd.DataFrame(results)
+        df_results_summary = df_results['category'].value_counts()
+        categories_to_keep = df_results_summary[df_results_summary > min_products].index.tolist()
+        print(
+            df_results_summary.nlargest(20)
+        )
+        df_results = df_results.query('category.isin(@categories_to_keep)')     
+        print(
+            f"Total number of records: {df_results.shape[0]}"
+        )   
 
         with open(output_file, 'w') as output:
-            for label_list in all_labels:
-                for (cat, name) in label_list:
-                    output.write(f'__label__{cat} {name}\n')
+            for row in df_results.to_dict(orient="records"):
+                output.write(
+                    f'__label__{row["category"]} {row["name"]}\n'
+                )
