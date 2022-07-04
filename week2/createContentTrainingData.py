@@ -9,6 +9,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 import pandas as pd
 import nltk
+import string
 
 nltk.download('punkt')
 nltk.download('stopwords')
@@ -21,6 +22,7 @@ def transform_name(product_name):
         word.lower().replace("-", "")
         for word in nltk.tokenize.word_tokenize(product_name)
         if word not in stopwords 
+        and word not in string.punctuation
     ]
     return " ".join(
         [
@@ -89,18 +91,22 @@ def _label_filename(filename):
                })
     return labels
 
+def merge_lists(left, right):
+    if right:
+        return left.extend(right)
+    else:
+        return left 
+
 if __name__ == '__main__':
     files = glob.glob(f'{directory}/*.xml')
     print("Writing results to %s" % output_file)
 
     with multiprocessing.Pool() as p:
         all_labels = tqdm(p.imap_unordered(_label_filename, files), total=len(files))
-
         results = []
         for result in all_labels:
             if result:
                 results.extend(result)
-
         df_results = pd.DataFrame(results)
         df_results_summary = df_results['category'].value_counts()
         categories_to_keep = df_results_summary[df_results_summary > min_products].index.tolist()
@@ -111,7 +117,6 @@ if __name__ == '__main__':
         print(
             f"Total number of records: {df_results.shape[0]}"
         )   
-
         with open(output_file, 'w') as output:
             for row in df_results.to_dict(orient="records"):
                 output.write(
