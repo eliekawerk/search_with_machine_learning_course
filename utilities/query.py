@@ -55,9 +55,12 @@ def create_query(
     sort="_score", sortDir="desc", size=10, source=None
 ):
     field_to_pull = "name" if not synonyms_flag else "name.synonym"
-    fields = [f"{field_to_pull}^10", "name.hyphens^10", "shortDescription^5",
-             "longDescription^5", "department^0.5", "sku", "manufacturer", "features",
-            "categoryPath", "name_synonyms"] 
+    fields = [
+        f"{field_to_pull}^10", "name.hyphens^10", "shortDescription^5",
+        "longDescription^5", "department^0.5", "sku", "manufacturer", "features",
+        "categoryPath", "name_synonyms"
+    ] 
+    print("Creating query")        
     query_obj = {
         'size': size,
         "sort": [
@@ -209,11 +212,17 @@ def search(client, user_query, index="bbuy_products", synonyms_flag=False, sort=
     if response and response['hits']['hits'] and len(response['hits']['hits']) > 0:
         hits = response['hits']['hits']
         # print(json.dumps(response, indent=2))
-        for hit in hits:
+        LEN_LINE = 100
+        print("="*LEN_LINE)
+        for (i, hit) in enumerate(hits, 1):            
             print(
-                f"Name: {hit['_source']['name'][0]} ",
-                f"Description: {hit['_source']['shortDescription']}"
+                f"Rank: {i}, Name: {hit['_source']['name'][0]} "
             )
+            print(
+                f"Description: {hit['_source']['shortDescription'][0]}"
+            )
+            print("-"*LEN_LINE)
+        print("="*LEN_LINE)
 
 
 if __name__ == "__main__":
@@ -233,7 +242,7 @@ if __name__ == "__main__":
     general.add_argument(
         "--synonyms",
         action="store_true",
-        default=False
+        default=True
     )
 
     args = parser.parse_args()
@@ -263,6 +272,7 @@ if __name__ == "__main__":
     index_name = args.index
     query_prompt = "\nEnter your query (type 'Exit' to exit or hit ctrl-c):"
     synonyms_flag = bool(args.synonyms)
+    print(f"Synonym Flag: {synonyms_flag}")
     print(query_prompt)
     for line in fileinput.input():
         query = line.rstrip()
