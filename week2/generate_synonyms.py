@@ -1,9 +1,7 @@
 from argparse import ArgumentParser
-import csv 
 import os
 from pathlib import Path
 import fasttext
-import pandas as pd
 
 MODEL_DIRECTORY_DEFAULT = '/workspace/datasets/fasttext/title_model_normalized.bin'
 FILEPATH_DEFAULT = '/workspace/datasets/fasttext/top_words.txt'
@@ -17,7 +15,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--threshold",
-    default=0.75,
+    default=0.8,
     type=float
 )
 parser.add_argument(
@@ -31,7 +29,7 @@ parser.add_argument(
     type=str
 )
 args = parser.parse_args()
-MODEL_DIRECTORY = args.model_path
+MODEL_DIRECTORY = Path(args.model_path)
 THRESHOLD = args.threshold
 FILEPATH = Path(args.file_path)
 OUTPUT_FILENAME = Path(args.output)
@@ -44,10 +42,9 @@ def main():
         
     results = []
     for word in words:
-        word = word.strip("\n")
         scores_synonyms = model.get_nearest_neighbors(word)
         synonyms = " ".join(
-            [word] + [
+            [
                 ss[1]
                 for ss in scores_synonyms
                 if ss[0] > THRESHOLD 
@@ -55,18 +52,16 @@ def main():
         )
         results.append(
             {
+                'word': word,
                 "synonyms": synonyms 
             }
         )
+
     df_results = pd.DataFrame(results)
     df_results.to_csv(
         OUTPUT_FILENAME,
-        header=False,
-        index=False,
-        sep="\t", 
-        quoting = csv.QUOTE_NONE        
+        header=False
     )
 
 if __name__ == '__main__':
     main()
-
