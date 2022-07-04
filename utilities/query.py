@@ -206,10 +206,14 @@ def search(client, user_query, index="bbuy_products", synonyms_flag=False, sort=
     )
     logging.info(query_obj)
     response = client.search(query_obj, index=index)
-    print(response)
     if response and response['hits']['hits'] and len(response['hits']['hits']) > 0:
         hits = response['hits']['hits']
-        print(json.dumps(response, indent=2))
+        # print(json.dumps(response, indent=2))
+        for hit in hits:
+            print(
+                f"Name: {hit['_source']['name'][0]} ",
+                f"Description: {hit['_source']['shortDescription']}"
+            )
 
 
 if __name__ == "__main__":
