@@ -117,7 +117,8 @@ while category_counts_below_threshold_flag:
     if iterations % 10 == 0:
         logger.info(iterations)
         logger.info(
-            f"Nunber of categories with less than {min_queries} queries: {category_counts['is_below_threshold_flag'].sum()}"
+            f"Nunber of categories with less than {min_queries} queries: "
+            f"{category_counts['is_below_threshold_flag'].sum()}"
         )    
 
     relevant_categories = [
@@ -131,10 +132,11 @@ while category_counts_below_threshold_flag:
     category_counts_below_threshold_flag = category_counts['is_below_threshold_flag'].any()
     iterations += 1
 
-print(category_counts.head())
-print(
-    "Number of unique categories: ",
-    category_counts['category'].nunique()
+logger.info(
+    category_counts.head()
+)
+logger.info(
+    f"Number of unique categories: {category_counts['category'].nunique()}"    
 )
 
 # Create labels in fastText format.
@@ -144,8 +146,15 @@ df['label'] = '__label__' + df['category']
 df = df[df['category'].isin(categories)]
 df['output'] = df['label'] + ' ' + df['query']
 
-print(df.head(20))
+logger.info(
+    df.head(20)
+)
 
 df[['output']].to_csv(
-    output_file_name, header=False, sep='|', escapechar='\\', quoting=csv.QUOTE_NONE, index=False
+    output_file_name, 
+    header=False, 
+    sep='|', 
+    escapechar='\\', 
+    quoting=csv.QUOTE_NONE, 
+    index=False
 )
