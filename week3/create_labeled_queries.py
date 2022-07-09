@@ -4,6 +4,20 @@ import xml.etree.ElementTree as ET
 import pandas as pd
 import numpy as np
 import csv
+import logging 
+
+# Initiate logger
+def initiate_logger(logger_name:str=None):
+    logger = logging.getLogger(
+        __name__ if logger_name is None else logger_name
+    )
+    logger.setLevel(logging.DEBUG)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    logger.addHandler(ch)
+    return logger
+
+logger = initiate_logger()    
 
 # Useful if you want to perform stemming.
 import nltk
@@ -49,8 +63,68 @@ df = pd.read_csv(queries_file_name)[['category', 'query']]
 df = df[df['category'].isin(categories)]
 
 # IMPLEMENT ME: Convert queries to lowercase, and optionally implement other normalization, like stemming.
+logger.info(
+    "Starting to process the queries"
+)
+df['query'] = (
+    df['query']
+    .str.lower()
+    .str.replace('"', '', regex=False)
+    .str.replace(r"\s+", " ", regex=True)
+    .apply(
+        lambda x: "".join(
+            [
+                c if c.isalnum() else " " 
+                for c in x
+            ]
+        )
+    )
+    .apply(
+        lambda x: stemmer.stem(x)
+    )
+)
+
+logger.info("Done from processing queries")
 
 # IMPLEMENT ME: Roll up categories to ancestors to satisfy the minimum number of queries per category.
+category_to_parent_dict = dict(zip(categories, parents))
+category_counts_below_threshold_flag = True
+iterations = 0
+
+while category_counts_below_threshold_flag:
+    category_counts = (
+        df
+        .groupby('category')
+        .agg(
+            num_queries=('query', 'count')
+        )
+        .reset_index()    
+        .assign(
+            is_below_threshold_flag=lambda dframe: dframe['num_queries'] <= min_queries
+        ) 
+    )
+    if iterations % 10 == 0:
+        logger.info(iterations)
+        logger.info(
+            f"Nunber of categories with less than {min_queries} queries: {category_counts['is_below_threshold_flag'].sum()}"
+        )    
+
+    relevant_categories = [
+        cat 
+        for cat in category_counts.query("is_below_threshold_flag == True")['category'].tolist()
+        if cat != root_category_id
+    ]
+    for category in relevant_categories:
+        df['category'] = df['category'].replace(category, category_to_parent_dict.get(category, category))
+    
+    category_counts_below_threshold_flag = category_counts['is_below_threshold_flag'].any()
+    iterations += 1
+
+print(category_counts.head())
+print(
+    "Number of unique categories: ",
+    category_counts['category'].nunique()
+)
 
 # Create labels in fastText format.
 df['label'] = '__label__' + df['category']
@@ -58,4 +132,9 @@ df['label'] = '__label__' + df['category']
 # Output labeled query data as a space-separated file, making sure that every category is in the taxonomy.
 df = df[df['category'].isin(categories)]
 df['output'] = df['label'] + ' ' + df['query']
-df[['output']].to_csv(output_file_name, header=False, sep='|', escapechar='\\', quoting=csv.QUOTE_NONE, index=False)
+
+print(df.head(20))
+
+df[['output']].to_csv(
+    output_file_name, header=False, sep='|', escapechar='\\', quoting=csv.QUOTE_NONE, index=False
+)
