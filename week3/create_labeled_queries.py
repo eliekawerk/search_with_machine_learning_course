@@ -21,6 +21,7 @@ logger = initiate_logger()
 
 # Useful if you want to perform stemming.
 import nltk
+nltk.download('punkt')
 stemmer = nltk.stem.PorterStemmer()
 
 categories_file_name = r'/workspace/datasets/product_data/categories/categories_0001_abcat0010000_to_pcmcat99300050000.xml'
@@ -66,6 +67,16 @@ df = df[df['category'].isin(categories)]
 logger.info(
     "Starting to process the queries"
 )
+
+def stem_sentence(sentence):
+    word_tokens = nltk.tokenize.word_tokenize(sentence)
+    stemmed_words = [
+        stemmer.stem(word)
+        for word in word_tokens
+    ]
+    return " ".join(stemmed_words)
+
+
 df['query'] = (
     df['query']
     .str.lower()
@@ -80,7 +91,7 @@ df['query'] = (
         )
     )
     .apply(
-        lambda x: stemmer.stem(x)
+        lambda x: stem_sentence(x)
     )
 )
 
