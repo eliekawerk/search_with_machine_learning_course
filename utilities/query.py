@@ -262,17 +262,44 @@ def search(
         sortDir=sortDir, 
         source=["name", "shortDescription"]
     )
+    query_obj_no_filters = create_query(
+        user_query, 
+        click_prior_query=None, 
+        filters=None, 
+        sort=sort, 
+        sortDir=sortDir, 
+        source=["name", "shortDescription"]
+    )    
     logging.info(query_obj)
     response = client.search(
         query_obj, 
         index=index
     )
+    response_no_filters = client.search(
+        query_obj_no_filters, 
+        index=index
+    )    
     if response and response['hits']['hits'] and len(response['hits']['hits']) > 0:
         hits = response['hits']['hits']
-        print(
-            json.dumps(response, indent=2)
-        )
+        print("="*100)
+        print(f"Results with Filters for query: {user_query}")
+        print("="*100)
+        if not hits:
+            print("No results")
+        for hit in hits:
+            print(hit['_source']['name'][0], hit['_source']['shortDescription'][0])
+        print("="*100)
 
+    if response_no_filters and response_no_filters['hits']['hits'] and len(response_no_filters['hits']['hits']) > 0:
+        hits = response_no_filters['hits']['hits']
+        print("="*100)
+        print(f"Results without Filters for query: {user_query}")
+        if not hits:
+            print("No results")
+        print("="*100)
+        for hit in hits:
+            print(hit['_source']['name'][0], hit['_source']['shortDescription'][0])            
+        print("="*100)
 
 if __name__ == "__main__":
     host = 'localhost'

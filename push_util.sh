@@ -11,6 +11,5 @@ git add .
 git commit -m "$1"
 
 echo "Pushing changes"
-git push elie_repo
-
+git push origin week3
 
