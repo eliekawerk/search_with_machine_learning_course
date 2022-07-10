@@ -126,9 +126,18 @@ while category_counts_below_threshold_flag:
         for cat in category_counts.query("is_below_threshold_flag == True")['category'].tolist()
         if cat != root_category_id
     ]
-    for category in relevant_categories:
-        df['category'] = df['category'].replace(category, category_to_parent_dict.get(category, category))
+
+    # for category in relevant_categories:
+        # df['category'] = df['category'].replace(category, category_to_parent_dict.get(category, category))
     
+    replace_dict = {
+        cat:parent
+        for (cat, parent) in category_to_parent_dict.items()
+        if cat in relevant_categories
+    }
+    
+    df['category'] = df['category'].replace(replace_dict)
+
     category_counts_below_threshold_flag = category_counts['is_below_threshold_flag'].any()
     iterations += 1
 
