@@ -105,12 +105,7 @@ def get_opensearch():
     return client
 
 
-def index_file(file, index_name, reduced=False):
-    logger.info("Creating Model")
-    # IMPLEMENT ME: instantiate the sentence transformer model!
-    model = SentenceTransformer('paraphrase-MiniLM-L6-v2')    
-    logger.info("Ready to index")
-
+def index_file(file, index_name, reduced=False, model=model):
     docs_indexed = 0
     client = get_opensearch()
     logger.info(f'Processing file : {file}')
@@ -143,6 +138,9 @@ def index_file(file, index_name, reduced=False):
         if docs_indexed % 200 == 0:
             logger.info("Indexing")
             names = [doc.get('name', '') for doc in docs]
+            logger.info(
+                f"First vectors of embedding: {names[10][:10]}"
+            )            
             embeddings = model.encode(names)
             for (doc, embedding) in zip(docs, embeddings):
                 doc['embedding'] = embedding
@@ -161,15 +159,21 @@ def index_file(file, index_name, reduced=False):
 @click.option('--reduced', is_flag=True, show_default=True, default=False, help="Removes music, movies, and merchandised products.")
 def main(source_dir: str, index_name: str, reduced: bool):
     logger.info(f"Indexing {source_dir} to {index_name}, the reduced flag set to {reduced}.")
-    files = glob.glob(source_dir + "/*.xml")
+    files = glob.glob(source_dir + "/*.xml")[:2]
     docs_indexed = 0
+
+    logger.info("Creating Model")
+    # IMPLEMENT ME: instantiate the sentence transformer model!
+    model = SentenceTransformer('paraphrase-MiniLM-L6-v2')    
+    logger.info("Ready to index")
+
     start = perf_counter()
-
     for file in files:
-        docs_indexed += index_file(file, index_name, reduced)
-
+        docs_indexed += index_file(file, index_name, reduced, model)
     finish = perf_counter()
-    logger.info(f'Done. Total docs: {docs_indexed} in {(finish - start)/60} minutes')
+    logger.info(
+        f'Done. Total docs: {docs_indexed} in {(finish - start)/60} minutes'
+    )
 
 if __name__ == "__main__":
     main()

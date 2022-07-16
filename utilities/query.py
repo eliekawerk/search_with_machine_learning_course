@@ -259,7 +259,8 @@ def search_embedding_knn(
     index='bbuy_products'
 ):
     query_object = create_vector_query(
-        user_query
+        user_query,
+        top_k=20,
     )
     response = client.search(
         query_object,
@@ -383,7 +384,7 @@ if __name__ == "__main__":
         password = getpass()
         auth = (args.user, password)
 
-    vector_flag = args.vector
+    vector_flag = True # args.vector
 
     base_url = "https://{}:{}/".format(host, port)
     opensearch = OpenSearch(
