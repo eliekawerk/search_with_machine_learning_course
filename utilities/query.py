@@ -383,7 +383,7 @@ if __name__ == "__main__":
         password = getpass()
         auth = (args.user, password)
 
-    vector_flag = args.v
+    vector_flag = args.vector
 
     base_url = "https://{}:{}/".format(host, port)
     opensearch = OpenSearch(
