@@ -14,16 +14,33 @@ import logging
 import re
 import fasttext
 import nltk
+from sentence_transformers import SentenceTransformer
+
 
 nltk.download('punkt')
 stemmer = nltk.stem.PorterStemmer()
 
 MODEL_PATH = "/workspace/datasets/fasttext/query_classifier_lr05_epochs25_ngrams2.bin"
 QUERY_CLASSIFIER = fasttext.load_model(MODEL_PATH)
+TRANSFORMER_MODEL = SentenceTransformer('paraphrase-MiniLM-L6-v2')  
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logging.basicConfig(format='%(levelname)s:%(message)s')
+
+def create_vector_query(query:str, top_k:int):
+    embedding_query_object = {
+        "size": top_k,
+        "query": {
+            "knn": {
+                "my_vector": {
+                    "vector": TRANSFORMER_MODEL.encode(query),
+                    "k": top_k
+                }
+            }
+        }
+    }
+    return embedding_query_object
 
 # expects clicks and impressions to be in the row
 def create_prior_queries_from_group(
@@ -227,6 +244,29 @@ def classify_query(user_query:str, threshold:float=0.5, top_k:int=20):
     return relevant_classes, cum_proba
     # return classes_[0].strip("__label__") if probas_[0] >= threshold else None, probas_[0]
 
+def search_embedding_knn(
+    client,
+    user_query,
+    index='bbuy_products'
+):
+    query_object = create_vector_query(
+        user_query
+    )
+    response = client.search(
+        query_object,
+        index=index
+    )
+    if response and response['hits']['hits'] and len(response['hits']['hits']) > 0:
+        hits = response['hits']['hits']
+        print("="*100)
+        print(f"Results with Filters for query: {user_query}")
+        print("="*100)
+        if not hits:
+            print("No results")
+        for hit in hits:
+            print(hit['_source']['name'][0], hit['_source']['shortDescription'][0])
+        print("="*100)
+
 def search(
     client, 
     user_query, 
@@ -315,6 +355,12 @@ if __name__ == "__main__":
                          help='The OpenSearch port')
     general.add_argument('--user',
                          help='The OpenSearch admin.  If this is set, the program will prompt for password too. If not set, use default of admin/admin')
+    general.add_argument(
+        '-v',
+        '--vector',
+        action='store_true',
+        help="Flag variable to indicat whether to use classical search or search based on embeddings"
+    )                        
 
     args = parser.parse_args()
 
@@ -327,6 +373,8 @@ if __name__ == "__main__":
     if args.user:
         password = getpass()
         auth = (args.user, password)
+
+    vector_flag = args.v
 
     base_url = "https://{}:{}/".format(host, port)
     opensearch = OpenSearch(
@@ -348,7 +396,18 @@ if __name__ == "__main__":
         query = line.rstrip()
         if query == "Exit":
             break
-        search(client=opensearch, user_query=query, index=index_name)
+        if vector_flag:
+            search_embedding_knn(
+                client=opensearch,
+                user_query=query,
+                index=index_name
+            )
+        else:
+            search(
+                client=opensearch,
+                user_query=query,
+                index=index_name
+            )
 
         print(query_prompt)
 
