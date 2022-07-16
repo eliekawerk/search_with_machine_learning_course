@@ -42,7 +42,7 @@ def create_vector_query(
             "size": top_k,
             "query": {
                 "knn": {
-                    "my_vector": {
+                    "embedding": {
                         "vector": query_vector,
                         "k": top_k
                     }
