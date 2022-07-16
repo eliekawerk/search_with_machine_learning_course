@@ -143,7 +143,7 @@ def index_file(file, index_name, reduced=False, model=model):
             )            
             embeddings = model.encode(names)
             for (doc, embedding) in zip(docs, embeddings):
-                doc['embedding'] = embedding
+                doc['_source']['embedding'] = embedding
             bulk(client, docs, request_timeout=60)
             logger.info(f'{docs_indexed} documents indexed')
             docs = []
