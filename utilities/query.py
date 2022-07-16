@@ -34,7 +34,7 @@ def create_vector_query(
 ):    
     query_list = [query] if not isinstance(query, list) else query 
     try:
-        query_vector = TRANSFORMER_MODEL.encode(query_list)
+        query_vector = list(TRANSFORMER_MODEL.encode(query_list)[0])
     except:
         raise ValueError("Please enter a valid query string object")
     finally:
