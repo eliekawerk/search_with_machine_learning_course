@@ -28,19 +28,28 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logging.basicConfig(format='%(levelname)s:%(message)s')
 
-def create_vector_query(query:str, top_k:int):
-    embedding_query_object = {
-        "size": top_k,
-        "query": {
-            "knn": {
-                "my_vector": {
-                    "vector": TRANSFORMER_MODEL.encode(query),
-                    "k": top_k
+def create_vector_query(
+    query:str, 
+    top_k:int
+):    
+    query_list = [query] if not isinstance(query, list) else query 
+    try:
+        query_vector = TRANSFORMER_MODEL.encode(query_list)
+    except:
+        raise ValueError("Please enter a valid query string object")
+    finally:
+        embedding_query_object = {
+            "size": top_k,
+            "query": {
+                "knn": {
+                    "my_vector": {
+                        "vector": query_vector,
+                        "k": top_k
+                    }
                 }
             }
         }
-    }
-    return embedding_query_object
+        return embedding_query_object
 
 # expects clicks and impressions to be in the row
 def create_prior_queries_from_group(
