@@ -43,14 +43,6 @@
           }
         }
       },
-      "embedding": {
-        "type": "knn_vector",
-        "dimension": 384,
-        "method": {
-          "engine": "nmslib",
-          "space_type": "cosinesimil"
-        }
-      },
       "accessories": {
         "type": "text",
         "fields": {
@@ -163,6 +155,15 @@
       },
       "digital": {
         "type": "boolean"
+      },
+      "embedding": {
+        "type": "knn_vector",
+        "dimension": 384,
+        "method": {
+          "name": "hnsw",
+          "space_type": "cosinesimil",
+          "engine": "nmslib"
+        }
       },
       "features": {
         "type": "text",
