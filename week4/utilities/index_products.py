@@ -142,7 +142,7 @@ def index_file(file, index_name, reduced=False):
         docs_indexed += 1
         if docs_indexed % 200 == 0:
             logger.info("Indexing")
-            names = [doc.get('name') for doc in docs]
+            names = [doc.get('name', '') for doc in docs]
             embeddings = model.encode(names)
             for (doc, embedding) in zip(docs, embeddings):
                 doc['embedding'] = embedding
