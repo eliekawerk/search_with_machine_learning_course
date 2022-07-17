@@ -57,7 +57,9 @@ def create_vector_query(
 def create_prior_queries_from_group(
         click_group):  # total impressions isn't currently used, but it mayb worthwhile at some point
     click_prior_query = ""
-    # Create a string that looks like:  "query": "1065813^100 OR 8371111^89", where the left side is the doc id and the right side is the weight.  In our case, the number of clicks a document received in the training set
+    # Create a string that looks like:  "query": "1065813^100 OR 8371111^89", 
+    # where the left side is the doc id and the right side is the weight.  
+    # In our case, the number of clicks a document received in the training set
     if click_group is not None:
         for item in click_group.itertuples():
             try:
@@ -69,10 +71,16 @@ def create_prior_queries_from_group(
 
 
 # expects clicks from the raw click logs, so value_counts() are being passed in
-def create_prior_queries(doc_ids, doc_id_weights,
-                         query_times_seen):  # total impressions isn't currently used, but it mayb worthwhile at some point
+def create_prior_queries(
+    doc_ids,
+    doc_id_weights,
+    query_times_seen
+):  
+    # total impressions isn't currently used, but it mayb worthwhile at some point
     click_prior_query = ""
-    # Create a string that looks like:  "query": "1065813^100 OR 8371111^89", where the left side is the doc id and the right side is the weight.  In our case, the number of clicks a document received in the training set
+    # Create a string that looks like:  "query": "1065813^100 OR 8371111^89",
+    # where the left side is the doc id and the right side is the weight. 
+    # In our case, the number of clicks a document received in the training set
     click_prior_map = ""  # looks like: '1065813':100, '8371111':809
     if doc_ids is not None and doc_id_weights is not None:
         for idx, doc in enumerate(doc_ids):
@@ -206,7 +214,8 @@ def create_query(user_query, click_prior_query, filters, sort="_score", sortDir=
     if click_prior_query is not None and click_prior_query != "":
         query_obj["query"]["function_score"]["query"]["bool"]["should"].append({
             "query_string": {
-                # This may feel like cheating, but it's really not, esp. in ecommerce where you have all this prior data,  You just can't let the test clicks leak in, which is why we split on date
+                # This may feel like cheating, but it's really not, esp. in ecommerce where you have all this prior data, 
+                # You just can't let the test clicks leak in, which is why we split on date
                 "query": click_prior_query,
                 "fields": ["_id"]
             }
