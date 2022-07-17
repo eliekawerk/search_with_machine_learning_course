@@ -137,25 +137,52 @@ def index_file(file, index_name, reduced=False):
             continue
         if reduced and ('categoryPath' not in doc or 'Best Buy' not in doc['categoryPath'] or 'Movies & Music' in doc['categoryPath']):
             continue        
-        docs.append({'_index': index_name, '_id':doc['sku'][0], '_source' : doc})
-        #docs.append({'_index': index_name, '_source': doc})
+        docs.append(
+            {
+                '_index': index_name, 
+                '_id':doc['sku'][0], 
+                '_source' : doc
+            }
+        )
+        names.append(
+            doc.get('name', '')[0]
+        )
         docs_indexed += 1
         if docs_indexed % 200 == 0:
-            logger.info("Indexing")
-            names = [doc.get('name', '') for doc in docs]
-            logger.info(
-                f"First vectors of embedding: {names[10][:10]}"
-            )            
-            embeddings = model.encode(names)
+            logger.info("Indexing")  
+            embeddings = model.encode(
+                names
+            )
             for (doc, embedding) in zip(docs, embeddings):
                 doc['_source']['embedding'] = embedding
-            bulk(client, docs, request_timeout=60)
+            logger.info(
+                f"Embedding sample: {embeddings}"
+            )
+            bulk(
+                client, 
+                docs, 
+                request_timeout=60
+            )
             logger.info(f'{docs_indexed} documents indexed')
             docs = []
             names = []
     if len(docs) > 0:
-        bulk(client, docs, request_timeout=60)
-        logger.info(f'{docs_indexed} documents indexed')
+        embeddings = model.encode(
+            names
+        )
+        for (doc, embedding) in zip(docs, embeddings):
+            doc['_source']['embedding'] = embedding
+        logger.info(
+            f"Embedding sample: {embeddings}"
+        )        
+        bulk(
+            client, 
+            docs, 
+            request_timeout=60
+        )
+        logger.info(
+            f'{docs_indexed} documents indexed'
+        )
     return docs_indexed
 
 @click.command()
@@ -163,10 +190,13 @@ def index_file(file, index_name, reduced=False):
 @click.option('--index_name', '-i', default="bbuy_products", help="The name of the index to write to")
 @click.option('--reduced', is_flag=True, show_default=True, default=False, help="Removes music, movies, and merchandised products.")
 def main(source_dir: str, index_name: str, reduced: bool):
-    logger.info(f"Indexing {source_dir} to {index_name}, the reduced flag set to {reduced}.")
-    files = glob.glob(source_dir + "/*.xml") 
+    logger.info(
+        f"Indexing {source_dir} to {index_name}, the reduced flag set to {reduced}."
+    )
+    files = glob.glob(
+        source_dir + "/*.xml"
+    )
     docs_indexed = 0
-
     start = perf_counter()
     for file in files:
         docs_indexed += index_file(file, index_name, reduced)
