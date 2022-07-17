@@ -36,7 +36,9 @@ def create_vector_query(
     try:
         query_vector = list(TRANSFORMER_MODEL.encode(query_list)[0])
     except:
-        raise ValueError("Please enter a valid query string object")
+        raise ValueError(
+            "Please enter a valid query string object"
+        )
     finally:
         embedding_query_object = {
             "size": top_k,

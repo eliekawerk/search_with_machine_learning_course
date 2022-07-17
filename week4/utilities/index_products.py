@@ -135,7 +135,11 @@ def index_file(file, index_name, reduced=False):
             continue
         if 'name' not in doc or len(doc['name']) == 0:
             continue
-        if reduced and ('categoryPath' not in doc or 'Best Buy' not in doc['categoryPath'] or 'Movies & Music' in doc['categoryPath']):
+        if reduced and (
+            'categoryPath' not in doc or 
+            'Best Buy' not in doc['categoryPath'] or 
+            'Movies & Music' in doc['categoryPath']
+        ):
             continue        
         docs.append(
             {
@@ -155,15 +159,14 @@ def index_file(file, index_name, reduced=False):
             )
             for (doc, embedding) in zip(docs, embeddings):
                 doc['_source']['embedding'] = embedding
-            logger.info(
-                f"Embedding sample: {embeddings}"
-            )
             bulk(
                 client, 
                 docs, 
                 request_timeout=60
             )
-            logger.info(f'{docs_indexed} documents indexed')
+            logger.info(
+                f'{docs_indexed} documents indexed'
+            )
             docs = []
             names = []
     if len(docs) > 0:
@@ -172,9 +175,6 @@ def index_file(file, index_name, reduced=False):
         )
         for (doc, embedding) in zip(docs, embeddings):
             doc['_source']['embedding'] = embedding
-        logger.info(
-            f"Embedding sample: {embeddings}"
-        )        
         bulk(
             client, 
             docs, 
@@ -188,7 +188,13 @@ def index_file(file, index_name, reduced=False):
 @click.command()
 @click.option('--source_dir', '-s', help='XML files source directory')
 @click.option('--index_name', '-i', default="bbuy_products", help="The name of the index to write to")
-@click.option('--reduced', is_flag=True, show_default=True, default=False, help="Removes music, movies, and merchandised products.")
+@click.option(
+    '--reduced',
+    is_flag=True,
+    show_default=True,
+    default=False, 
+    help="Removes music, movies, and merchandised products."
+)
 def main(source_dir: str, index_name: str, reduced: bool):
     logger.info(
         f"Indexing {source_dir} to {index_name}, the reduced flag set to {reduced}."
